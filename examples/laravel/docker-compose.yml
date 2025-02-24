@@ -1,0 +1,63 @@
+services:
+    # Application service
+    app:
+        build:
+            context: .
+            dockerfile: deploy/unit/Dockerfile
+            target: development
+        restart: unless-stopped
+        ports:
+            - "8081:80"
+        volumes:
+            - .:/app
+        depends_on:
+            - pgsql
+        environment:
+            DB_PASSWORD: test
+            OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4317"
+            OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+            LOG_CHANNEL: otlp
+        networks:
+            - backend
+            - monitoring
+    # Main database service
+    pgsql:
+        image: postgres:17
+        restart: unless-stopped
+        environment:
+            POSTGRES_USER: test
+            POSTGRES_DB: test
+            POSTGRES_PASSWORD: test
+        volumes:
+            - pgdata:/var/lib/postgresql/data
+        networks:
+            - backend
+    # PG Dump service
+    # Redis service
+    redis:
+        image: redis:alpine
+        restart: unless-stopped
+        volumes:
+            - redisdata:/data
+        networks:
+            - backend
+    # Memcached service
+    memcached:
+        image: memcached:alpine
+        restart: unless-stopped
+        networks:
+            - backend
+        volumes:
+            - memcacheddata:/data
+volumes:
+    pgdata:
+        driver: local
+    redisdata:
+        driver: local
+    memcacheddata:
+        driver: local
+networks:
+    backend:
+        internal: true
+    monitoring:
+        external: true

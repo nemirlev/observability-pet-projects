@@ -1,0 +1,104 @@
+services:
+  # Vector for log collection
+  vector:
+    image: timberio/vector:latest-alpine
+    volumes:
+      - ./configs/vector/vector.yaml:/etc/vector/vector.yaml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - loki
+      - victoriametrics
+    networks:
+      - monitoring
+
+  otel-collector:
+    image: otel/opentelemetry-collector:latest
+    volumes:
+      - ./configs/otel-collector/otel-collector-config.yml:/etc/otel-collector/otel-collector-config.yaml
+    command: [ "--config=/etc/otel-collector/otel-collector-config.yaml" ]
+    networks:
+      - monitoring
+
+  # Tempo for trace visualization
+  tempo:
+    image: grafana/tempo:latest
+    volumes:
+      - ./configs/tempo/tempo-config.yaml:/etc/tempo/tempo-config.yaml
+    command: [ "--config.file=/etc/tempo/tempo-config.yaml" ]
+    restart: unless-stopped
+    networks:
+      - monitoring
+
+  # Loki for log aggregation  
+  loki:
+    image: grafana/loki:latest
+    command: -config.file=/etc/loki/loki-config.yaml
+    volumes:
+      - ./configs/loki/loki-config.yaml:/etc/loki/loki-config.yaml
+      - loki-data:/loki
+    networks:
+      - monitoring
+
+  # VictoriaMetrics for storing metrics
+  victoriametrics:
+    image: victoriametrics/victoria-metrics:latest
+    volumes:
+      - victoriametrics-data:/storage
+      - ./configs/victoria/victoriametrics-scrape.yml:/etc/victoria/prometheus.yml:ro
+    command:
+      - '--retentionPeriod=3'
+      - '--promscrape.config=/etc/victoria/prometheus.yml'
+    networks:
+      - monitoring
+
+  # Grafana for visualization
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./configs/grafana/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml:ro
+    depends_on:
+      - loki
+      - victoriametrics
+      - jaeger  # Добавляем зависимость от Jaeger
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=victoriametrics-metrics-datasource
+    networks:
+      - monitoring
+
+  # Jaeger for distributed tracing
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    environment:
+      - COLLECTOR_ZIPKIN_HOST_PORT=:9411  # Поддержка Zipkin-формата
+      - PROMETHEUS_SERVER_URL=http://victoriametrics:8428
+    volumes:
+      - jaeger-data:/data  # Хранение данных трассировки
+    networks:
+      - monitoring
+
+  # cAdvisor for container metrics
+  cadvisor:
+      image: gcr.io/cadvisor/cadvisor:latest
+      volumes:
+        - /:/rootfs:ro
+        - /var/run:/var/run:ro
+        - /sys:/sys:ro
+        - /var/lib/docker/:/var/lib/docker:ro
+        - /dev/disk/:/dev/disk:ro
+      networks:
+      - monitoring
+
+volumes:
+  loki-data:
+  victoriametrics-data:
+  grafana-data:
+  jaeger-data:  # Добавляем volume для Jaeger
+
+networks:
+  monitoring:
+    external: true

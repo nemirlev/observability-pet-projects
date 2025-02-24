@@ -1,0 +1,33 @@
+# ------------------------------------------------------------------------------
+# V E C T O R Configuration
+# ------------------------------------------------------------------------------
+# Website: https://vector.dev
+# Docs: https://vector.dev/docs
+# Chat: https://chat.vector.dev
+# ------------------------------------------------------------------------------
+
+# Источник: логи из Docker
+sources:
+  docker_logs:
+    type: "docker_logs"
+
+# Преобразование: добавляем метку сервиса (опционально)
+transforms:
+  parse_logs:
+    type: "remap"
+    inputs:
+      - "docker_logs"
+    source: |
+      .service = "docker"
+
+# Отправка логов в Loki
+sinks:
+  loki:
+    type: "loki"
+    inputs:
+      - "parse_logs"
+    endpoint: "http://loki:3100"
+    labels:
+      app: "{{ container_name }}"
+    encoding:
+      codec: "json"

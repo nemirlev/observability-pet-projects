@@ -1,0 +1,34 @@
+{
+    "listeners": {
+        "*:80": {
+            "pass": "routes",
+            "forwarded": {
+                "protocol": "X-Forwarded-Proto",
+                "client_ip": "X-Forwarded-For",
+                "source": [
+                    "172.19.0.0/16"
+                ]
+            }
+        }
+    },
+    "routes": [
+        {
+            "match": {
+                "uri": "!/index.php"
+            },
+            "action": {
+                "share": "/app/public$uri",
+                "fallback": {
+                    "pass": "applications/laravel"
+                }
+            }
+        }
+    ],
+    "applications": {
+        "laravel": {
+            "type": "php",
+            "root": "/app/public/",
+            "script": "index.php"
+        }
+    }
+}

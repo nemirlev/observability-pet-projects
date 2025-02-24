@@ -1,0 +1,54 @@
+extensions:
+  health_check:
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: "0.0.0.0:4317"
+      http:
+        endpoint: "0.0.0.0:4318"
+
+processors:
+  batch:
+    timeout: 5s
+    send_batch_size: 1024
+  memory_limiter:
+    check_interval: 5s
+    limit_mib: 512
+    spike_limit_mib: 128
+
+exporters:
+  prometheus:
+    endpoint: "victoriametrics:8889"  # Local Prometheus scraping endpoint
+  otlp:
+    endpoint: "tempo:4317"  # Tempo's OTLP endpoint
+    tls:
+      insecure: true
+  otlp/jaeger:
+    endpoint: "jaeger:4317"
+    tls:
+      insecure: true
+  otlphttp/logs:
+    endpoint: "http://loki:3100/otlp"
+    tls:
+      insecure: true
+  debug:  # Debug exporter for local inspection (optional)
+
+service:
+  extensions: [health_check]
+
+  pipelines:
+    metrics:
+#      receivers: [otlp, hostmetrics]  # Added 'hostmetrics' to the pipeline
+      receivers: [otlp]  # Added 'hostmetrics' to the pipeline
+      processors: [batch]
+      exporters: [prometheus, debug]  # Sends metrics to Prometheus
+    traces:
+      receivers: [otlp]
+      processors: [batch, memory_limiter]
+      exporters: [otlp, otlp/jaeger, debug]  # Sends traces to Tempo (via OTLP), jaeger, Zipkin, and debug
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlphttp/logs, debug]  # Logs are handled by Promtail and sent to Loki
