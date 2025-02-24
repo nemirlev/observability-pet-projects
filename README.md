@@ -8,11 +8,8 @@ This project is a simple example of how to use observability tools in a docker-c
 - Grafana for visualization
 - Loki for logs
 - Vector for logs and metrics routing
-
-Vector будет собирать логи и метрики из ваших приложений в Docker и отправлять их в Loki (логи) и VictoriaMetrics (метрики).
-Loki сохраняет логи и предоставляет API для их запросов.
-VictoriaMetrics хранит метрики в формате временных рядов.
-Grafana подключается к Loki и VictoriaMetrics как к источникам данных для построения дашбордов.
+- Jaeger for tracing
+- Tempo for tracing
 
 ## How to run
 
@@ -26,4 +23,10 @@ Then run the following command:
 
 ```bash
 docker compose up -d
+```
+
+and run example app with:
+
+```bash
+cd examples/laravel && docker compose up -d
 ```
