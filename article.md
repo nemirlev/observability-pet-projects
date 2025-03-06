@@ -19,7 +19,7 @@
 
 Метрики и логи я буду собирать как с прикладного уровня (сами приложения), так и с инфраструктурных сервисов (Docker, Nginx и т.д.). Также имеет смысл собирать метрики с самой машины, несмотря на то что у провайдера они уже есть, — ведь хочется держать всё в одном месте. Трейсы я пока планирую собирать только базовые, которые предоставляет библиотека OpenTelemetry для фреймворков.
 
-Для самых нетерпеливых — вот [ссылка на репозиторий]()
+Для самых нетерпеливых — вот [ссылка на репозиторий](https://github.com/nemirlev/observability-pet-projects)
 
 > Сделаю небольшое отступление. Всё, что описано ниже, идеально подходит лично мне, но при этом вы получите базу, которую сможете доработать под свои нужды. Понимаю, что идеала не существует и к нему можно лишь стремиться. Поэтому, если у вас есть идеи, как улучшить — добро пожаловать в комментарии.
 
@@ -39,8 +39,7 @@
 
 Приступим к конфигурации с `docker-compose.yaml`.
 
-<details>
-<summary><strong>docker-compose.yaml</strong></summary>
+<spoiler title="docker-compose.yaml">
 
 ```yaml
 services:
@@ -146,12 +145,11 @@ networks:
   monitoring:
     external: true
 ```
-</details>
+</spoiler>
 
 Здесь мы поднимаем все необходимые сервисы. Указываем сеть, с помощью которой будем передавать данные в наши сервисы с других контейнеров (перед запуском надо создать её командой `docker network create monitoring`). Для полноценного запуска потребуются ещё несколько конфигурационных файлов:
 
-<details>
-<summary><strong>vector.yaml</strong></summary>
+<spoiler title="vector.yaml">
 
 ```yaml
 # ------------------------------------------------------------------------------
@@ -188,12 +186,12 @@ sinks:
     encoding:
       codec: "json"
 ```
-</details>
+
+</spoiler>
 
 Данный конфиг сообщает Vector, что необходимо читать логи всех контейнеров (через `docker_logs`) и пересылать их в Loki.
 
-<details>
-<summary><strong>loki-config.yaml</strong></summary>
+<spoiler title="loki-config.yaml">
 
 ```yaml
 auth_enabled: false
@@ -247,12 +245,12 @@ ruler:
 frontend:
   encoding: protobuf
 ```
-</details>
+
+</spoiler>
 
 Это базовый конфиг для Loki, который можно со временем доработать.
 
-<details>
-<summary><strong>tempo-config.yaml</strong></summary>
+<spoiler title="tempo-config.yaml">
 
 ```yaml
 #stream_over_http_enabled: true
@@ -313,12 +311,12 @@ overrides:
       processors: [ service-graphs, span-metrics, local-blocks ]
       generate_native_histograms: both
 ```
-</details>
+
+</spoiler>
 
 Настройки для Tempo.
 
-<details>
-<summary><strong>otel-collector-config.yml</strong></summary>
+<spoiler title="otel-collector-config.yml">
 
 ```yaml
 extensions:
@@ -375,10 +373,9 @@ service:
       processors: [ batch ]
       exporters: [ otlphttp/logs, debug ]  # Логи отправляются в Loki
 ```
-</details>
+</spoiler>
 
-<details>
-<summary><strong>victoriametrics-scrape.yml</strong></summary>
+<spoiler title="victoriametrics-scrape.yml">
 
 ```yaml
 global:
@@ -397,7 +394,7 @@ scrape_configs:
     static_configs:
       - targets: [ 'cadvisor:8080' ]
 ```
-</details>
+</spoiler>
 
 Благодаря этому конфигу мы собираем метрики с cAdvisor и OpenTelemetry Collector.
 

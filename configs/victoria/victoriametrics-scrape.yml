@@ -19,3 +19,8 @@ scrape_configs:
     metrics_path: '/prometheus'
     static_configs:
       - targets: [ 'app:80' ]
+
+  - job_name: 'go_app'
+    scrape_interval: 15s
+    static_configs:
+      - targets: [ 'go-app:8080' ]

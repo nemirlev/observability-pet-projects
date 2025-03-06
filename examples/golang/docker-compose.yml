@@ -1,0 +1,12 @@
+services:
+  go-app:
+    build: .
+    container_name: go-app
+    ports:
+      - "8080:8080"
+    networks:
+      - monitoring
+
+networks:
+  monitoring:
+    external: true
