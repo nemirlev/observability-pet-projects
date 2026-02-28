@@ -13,6 +13,7 @@
 | **Pyroscope**   | grafana/pyroscope:1.13.2      | Continuous profiling          |
 | **Alloy**       | grafana/alloy:v1.13.2         | Приём OTLP + Faro RUM, маршрутизация |
 | **Alertmanager** | prom/alertmanager:latest     | Маршрутизация алертов (Loki Ruler → сюда) |
+| **Sentry**       | getsentry/sentry:latest     | Отлов ошибок (error tracking)             |
 | **Grafana Faro** | Alloy faro.receiver + [@grafana/faro-web-sdk](https://www.npmjs.com/package/@grafana/faro-web-sdk) | RUM: приём в Alloy :12347, SDK в браузере |
 
 ## Состав стека и порты
@@ -26,6 +27,7 @@
 | **Pyroscope** | 4040    | Приём профилей (push), запросы |
 | **Alloy**        | 4317 (gRPC), 4318 (HTTP), 12345 (UI), 12347 (Faro) | Телеметрия и RUM (Faro collector на :12347) |
 | **Alertmanager** | 9093    | Приём алертов от Loki Ruler, маршрутизация в Slack/email/webhook |
+| **Sentry**       | 9000    | Web UI, приём событий (DSN для приложений) |
 
 ## Архитектура
 
@@ -70,6 +72,7 @@ docker compose ps
 
 - **Grafana**: http://localhost:3000 (анонимный доступ включён для демо)
 - **Alloy UI**: http://localhost:12345
+- **Sentry**: http://localhost:9000 (после первого запуска — см. раздел Sentry ниже)
 
 ## Эндпоинты для инструментирования
 
@@ -81,6 +84,36 @@ docker compose ps
 | Профили (Pyroscope)     | `http://localhost:4040/ingest`   | HTTP push |
 
 В production замените `localhost` на hostname/домен Alloy (и при необходимости Pyroscope) и настройте CORS для Faro в `configs/alloy/alloy.alloy`.
+
+## Sentry (error tracking)
+
+**Sentry** — отлов и хранение ошибок из приложений (backend, frontend, мобильные). В стек добавлены сервисы: `sentry-postgres`, `sentry-redis`, `sentry`.
+
+1. **Первый запуск** — задайте секретный ключ и при необходимости пароль БД (или используйте значения по умолчанию из `.env.example`):
+
+   ```bash
+   cp .env.example .env
+   # Сгенерировать SENTRY_SECRET_KEY: openssl rand -hex 32
+   # Вписать ключ в .env в SENTRY_SECRET_KEY=
+   ```
+
+2. **Инициализация БД и создание суперпользователя** (один раз):
+
+   ```bash
+   docker compose run --rm sentry sentry upgrade
+   ```
+
+   В процессе создаётся учётная запись администратора (email и пароль).
+
+3. **Запуск стека** (если ещё не запущен):
+
+   ```bash
+   docker compose up -d
+   ```
+
+4. **Вход**: http://localhost:9000 — войдите под созданным админом, создайте организацию и проект, скопируйте DSN и подключите [Sentry SDK](https://docs.sentry.io/platforms/) в приложения.
+
+Минимальный набор (Postgres + Redis + Sentry) подходит для разработки и небольших объёмов. Для production с большим трафиком рекомендуется [официальный self-hosted](https://github.com/getsentry/self-hosted) (Kafka, ClickHouse, Snuba и др.).
 
 ## Grafana Faro (RUM)
 
@@ -117,7 +150,7 @@ docker compose ps
 - **Alloy**: `configs/alloy/alloy.alloy` — OTLP + **Grafana Faro** (faro.receiver :12347) → Loki/Tempo/Mimir
 - **Grafana**: `configs/grafana/provisioning/datasources/datasources.yaml` — Loki, Tempo, Mimir, Pyroscope
 
-Данные хранятся в томах: `loki_data`, `tempo_data`, `mimir_data`, `pyroscope_data`, `alloy_data`, `grafana_data`.
+Данные хранятся в томах: `loki_data`, `tempo_data`, `mimir_data`, `pyroscope_data`, `alloy_data`, `grafana_data`, `sentry_redis_data`, `sentry_postgres_data`.
 
 ## Остановка
 
