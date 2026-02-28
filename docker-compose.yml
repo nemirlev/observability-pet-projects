@@ -1,104 +1,101 @@
 services:
-  # Vector for log collection
-  vector:
-    image: timberio/vector:latest-alpine
-    volumes:
-      - ./configs/vector/vector.yaml:/etc/vector/vector.yaml:ro
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-    depends_on:
-      - loki
-      - victoriametrics
-    networks:
-      - monitoring
-
-  otel-collector:
-    image: otel/opentelemetry-collector:latest
-    volumes:
-      - ./configs/otel-collector/otel-collector-config.yml:/etc/otel-collector/otel-collector-config.yaml
-    command: [ "--config=/etc/otel-collector/otel-collector-config.yaml" ]
-    networks:
-      - monitoring
-
-  # Tempo for trace visualization
-  tempo:
-    image: grafana/tempo:latest
-    volumes:
-      - ./configs/tempo/tempo-config.yaml:/etc/tempo/tempo-config.yaml
-    command: [ "--config.file=/etc/tempo/tempo-config.yaml" ]
-    restart: unless-stopped
-    networks:
-      - monitoring
-
-  # Loki for log aggregation  
   loki:
     image: grafana/loki:latest
-    command: -config.file=/etc/loki/loki-config.yaml
+    container_name: loki
+    command: -config.file=/etc/loki/config.yaml
     volumes:
-      - ./configs/loki/loki-config.yaml:/etc/loki/loki-config.yaml
-      - loki-data:/loki
+      - ./configs/loki/loki-config.yaml:/etc/loki/config.yaml:ro
+      - loki_data:/loki
+    ports:
+      - "3100:3100"
     networks:
       - monitoring
 
-  # VictoriaMetrics for storing metrics
-  victoriametrics:
-    image: victoriametrics/victoria-metrics:latest
+  tempo:
+    image: grafana/tempo:latest
+    container_name: tempo
+    command: ["-config.file=/etc/tempo/config.yaml", "-config.expand-env=true"]
     volumes:
-      - victoriametrics-data:/storage
-      - ./configs/victoria/victoriametrics-scrape.yml:/etc/victoria/prometheus.yml:ro
+      - ./configs/tempo/tempo-config.yaml:/etc/tempo/config.yaml:ro
+      - tempo_data:/var/tempo
+    ports:
+      - "3200:3200"
+    networks:
+      - monitoring
+
+  mimir:
+    image: grafana/mimir:latest
+    container_name: mimir
+    command: ["-config.file=/etc/mimir/config.yaml", "-querier.query-engine=prometheus"]
+    volumes:
+      - ./configs/mimir/mimir-config.yaml:/etc/mimir/config.yaml:ro
+      - mimir_data:/data
+      - mimir_ruler_data:/data/ruler
+    ports:
+      - "9009:9009"
+    networks:
+      - monitoring
+
+  pyroscope:
+    image: grafana/pyroscope:latest
+    container_name: pyroscope
+    command: ["-config.file=/etc/pyroscope/config.yaml"]
+    volumes:
+      - ./configs/pyroscope/pyroscope-config.yaml:/etc/pyroscope/config.yaml:ro
+      - pyroscope_data:/var/lib/pyroscope
+    ports:
+      - "4040:4040"
+    networks:
+      - monitoring
+
+  alloy:
+    image: grafana/alloy:latest
+    container_name: alloy
     command:
-      - '--retentionPeriod=3'
-      - '--promscrape.config=/etc/victoria/prometheus.yml'
+      - run
+      - /etc/alloy/config.alloy
+      - --storage.path=/var/lib/alloy/data
+      - --server.http.listen-addr=0.0.0.0:12345
+    volumes:
+      - ./configs/alloy/alloy.alloy:/etc/alloy/config.alloy:ro
+      - alloy_data:/var/lib/alloy/data
+    ports:
+      - "12345:12345"
+      - "4317:4317"
+      - "4318:4318"
+      - "12347:12347"
     networks:
       - monitoring
 
-  # Grafana for visualization
   grafana:
     image: grafana/grafana:latest
+    container_name: grafana
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_USERS_DEFAULT_THEME: light
+      GF_SERVER_ROOT_URL: "http://localhost:3000"
+      GF_PATHS_PROVISIONING: /etc/grafana/provisioning
+    volumes:
+      - ./configs/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources:ro
+      - ./configs/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - grafana_data:/var/lib/grafana
     ports:
       - "3000:3000"
-    volumes:
-      - grafana-data:/var/lib/grafana
-      - ./configs/grafana/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml:ro
-    depends_on:
-      - loki
-      - victoriametrics
-      - jaeger  # Добавляем зависимость от Jaeger
-    environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-      - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_INSTALL_PLUGINS=victoriametrics-metrics-datasource
     networks:
       - monitoring
-
-  # Jaeger for distributed tracing
-  jaeger:
-    image: jaegertracing/all-in-one:latest
-    environment:
-      - COLLECTOR_ZIPKIN_HOST_PORT=:9411  # Поддержка Zipkin-формата
-      - PROMETHEUS_SERVER_URL=http://victoriametrics:8428
-    volumes:
-      - jaeger-data:/data  # Хранение данных трассировки
-    networks:
-      - monitoring
-
-  # cAdvisor for container metrics
-  cadvisor:
-      image: gcr.io/cadvisor/cadvisor:latest
-      volumes:
-        - /:/rootfs:ro
-        - /var/run:/var/run:ro
-        - /sys:/sys:ro
-        - /var/lib/docker/:/var/lib/docker:ro
-        - /dev/disk/:/dev/disk:ro
-      networks:
-      - monitoring
-
-volumes:
-  loki-data:
-  victoriametrics-data:
-  grafana-data:
-  jaeger-data:  # Добавляем volume для Jaeger
 
 networks:
   monitoring:
-    external: true
+    name: monitoring
+    driver: bridge
+
+volumes:
+  loki_data:
+  tempo_data:
+  mimir_data:
+  mimir_ruler_data:
+  pyroscope_data:
+  alloy_data:
+  alertmanager_data:
+  grafana_data:

@@ -1,0 +1,17 @@
+# Single-binary Pyroscope for development. Do not use in production at scale.
+target: all
+
+server:
+  http_listen_port: 4040
+  grpc_listen_port: 4041
+
+pyroscopedb:
+  data_path: /var/lib/pyroscope/data
+
+storage:
+  backend: filesystem
+  filesystem:
+    dir: /var/lib/pyroscope/tsdb
+
+analytics:
+  reporting_enabled: false
