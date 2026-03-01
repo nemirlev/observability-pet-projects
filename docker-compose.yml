@@ -5,7 +5,6 @@ services:
     command: -config.file=/etc/loki/config.yaml
     volumes:
       - ./configs/loki/loki-config.yaml:/etc/loki/config.yaml:ro
-      - loki_data:/loki
     ports:
       - "3100:3100"
     networks:
@@ -17,7 +16,6 @@ services:
     command: ["-config.file=/etc/tempo/config.yaml", "-config.expand-env=true"]
     volumes:
       - ./configs/tempo/tempo-config.yaml:/etc/tempo/config.yaml:ro
-      - tempo_data:/var/tempo
     ports:
       - "3200:3200"
     networks:
@@ -29,8 +27,6 @@ services:
     command: ["-config.file=/etc/mimir/config.yaml", "-querier.query-engine=prometheus"]
     volumes:
       - ./configs/mimir/mimir-config.yaml:/etc/mimir/config.yaml:ro
-      - mimir_data:/data
-      - mimir_ruler_data:/data/ruler
     ports:
       - "9009:9009"
     networks:
@@ -42,7 +38,6 @@ services:
     command: ["-config.file=/etc/pyroscope/config.yaml"]
     volumes:
       - ./configs/pyroscope/pyroscope-config.yaml:/etc/pyroscope/config.yaml:ro
-      - pyroscope_data:/var/lib/pyroscope
     ports:
       - "4040:4040"
     networks:
@@ -58,7 +53,6 @@ services:
       - --server.http.listen-addr=0.0.0.0:12345
     volumes:
       - ./configs/alloy/alloy.alloy:/etc/alloy/config.alloy:ro
-      - alloy_data:/var/lib/alloy/data
     ports:
       - "12345:12345"
       - "4317:4317"
@@ -91,11 +85,4 @@ networks:
     driver: bridge
 
 volumes:
-  loki_data:
-  tempo_data:
-  mimir_data:
-  mimir_ruler_data:
-  pyroscope_data:
-  alloy_data:
-  alertmanager_data:
   grafana_data:

@@ -43,10 +43,13 @@ loki.write "default" {
   }
 }
 
-// Traces -> Tempo
+// Traces -> Tempo (plain gRPC, no TLS)
 otelcol.exporter.otlp "tempo" {
   client {
     endpoint = "tempo:4317"
+    tls {
+      insecure = true
+    }
   }
 }
 

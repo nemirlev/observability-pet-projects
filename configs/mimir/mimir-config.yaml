@@ -39,10 +39,8 @@ compactor:
     kvstore:
       store: inmemory
 
-ruler_storage:
-  backend: local
-  local:
-    directory: /data/ruler
+# Ruler не стартует: ruler_storage не задан (IsDefaults) → Mimir пропускает ruler в monolithic.
+# Для алертов добавьте ruler_storage (local/S3) и при необходимости volume для /data/ruler.
 
 limits:
   ingestion_rate: 250000

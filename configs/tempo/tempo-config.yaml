@@ -22,6 +22,11 @@ storage:
       path: /var/tempo/wal
 
 metrics_generator:
+  storage:
+    path: /var/tempo/generator/wal
+  ring:
+    kvstore:
+      store: memberlist
   registry:
     external_labels:
       source: tempo
