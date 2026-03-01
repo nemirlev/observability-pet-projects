@@ -1,18 +1,19 @@
 "use client";
 
-import { initializeFaro } from "@grafana/faro-react";
-import { getWebInstrumentations } from "@grafana/faro-web-sdk";
+import {
+  getWebInstrumentations,
+  initializeFaro,
+} from "@grafana/faro-react";
 import { TracingInstrumentation } from "@grafana/faro-web-tracing";
 import { useEffect, type ReactNode } from "react";
 
-const FARO_URL =
-  process.env.NEXT_PUBLIC_FARO_COLLECTOR_URL ?? "http://localhost:12347/collect";
+const FARO_URL = process.env.NEXT_PUBLIC_FARO_COLLECTOR_URL;
 const FARO_APP_NAME = process.env.NEXT_PUBLIC_FARO_APP_NAME ?? "next-app";
 
 let faroInitialized = false;
 
 function initFaro() {
-  if (typeof window === "undefined" || faroInitialized) return;
+  if (typeof window === "undefined" || faroInitialized || !FARO_URL) return;
   faroInitialized = true;
 
   const faro = initializeFaro({
@@ -34,7 +35,6 @@ function initFaro() {
     ],
   });
 
-  // So that Loki/Tempo show this app as service name instead of "unknown_service"
   faro.api.setSession(undefined, { overrides: { serviceName: FARO_APP_NAME } });
 }
 

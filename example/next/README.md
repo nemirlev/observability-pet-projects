@@ -25,9 +25,8 @@ This project uses [`next/font`](https://nextjs.org/docs/app/building-your-applic
 The app is instrumented with:
 
 - **Grafana Faro** (`@grafana/faro-react`, `@grafana/faro-web-tracing`) — RUM: errors, logs, and traces are sent to the Faro collector (e.g. Alloy on `http://localhost:12347/collect` when using the parent repo’s docker-compose).
-- **Sentry** (`@sentry/nextjs`) — Error tracking, performance tracing, and optional session replay. Set `NEXT_PUBLIC_SENTRY_DSN` to enable.
 
-Copy `.env.example` to `.env.local` and set `NEXT_PUBLIC_FARO_COLLECTOR_URL` and optionally `NEXT_PUBLIC_SENTRY_DSN`. With the default Faro URL, run the [observability stack](../../) (Alloy, Loki, Tempo, etc.) to receive RUM data.
+Copy `.env.example` to `.env.local` and set `NEXT_PUBLIC_FARO_COLLECTOR_URL` as needed. With the default Faro URL, run the [observability stack](../../) (Alloy, Loki, Tempo, etc.) to receive RUM data.
 
 ## Learn More
 
