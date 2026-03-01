@@ -14,11 +14,13 @@ export default function FrontendObservability() {
   }
 
   try {
+    const appName =
+      process.env.NEXT_PUBLIC_FARO_APP_NAME || 'next-frontend';
+
     initializeFaro({
       url: process.env.NEXT_PUBLIC_FARO_URL,
       app: {
-        name:
-          process.env.NEXT_PUBLIC_FARO_APP_NAME || 'unknown_service:webjs',
+        name: appName,
         namespace:
           process.env.NEXT_PUBLIC_FARO_APP_NAMESPACE || undefined,
         version:
@@ -32,6 +34,9 @@ export default function FrontendObservability() {
         new TracingInstrumentation(),
       ],
     });
+
+    // So Grafana Frontend Observability shows the correct service name (service.name)
+    faro.api.setSession(undefined, { overrides: { serviceName: appName } });
   } catch {
     return null;
   }
