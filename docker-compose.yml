@@ -99,7 +99,7 @@ services:
     container_name: sentry
     restart: unless-stopped
     environment:
-      SENTRY_SECRET_KEY: ${SENTRY_SECRET_KEY:-}
+      SENTRY_SECRET_KEY: ${SENTRY_SECRET_KEY:-2253db008a2edfed8951afd85bcb69dbacd55e685a7feb915247a128aa884d90}
       SENTRY_POSTGRES_HOST: sentry-postgres
       SENTRY_DB_NAME: sentry
       SENTRY_DB_USER: sentry

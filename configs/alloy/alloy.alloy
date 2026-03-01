@@ -52,11 +52,15 @@ otelcol.exporter.otlp "tempo" {
 
 // ========== RUM (Grafana Faro) ==========
 // Browser apps send to Faro receiver; logs go to Loki, traces to Tempo
+// extra_log_labels: fallback when client does not set serviceName (e.g. old SDK)
 faro.receiver "rum" {
   server {
     listen_address = "0.0.0.0"
     listen_port    = 12347
     cors_allowed_origins = ["*"]
+  }
+  extra_log_labels = {
+    service = "next-app",
   }
   output {
     logs   = [loki.write.default.receiver]

@@ -20,6 +20,15 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Observability
+
+The app is instrumented with:
+
+- **Grafana Faro** (`@grafana/faro-react`, `@grafana/faro-web-tracing`) — RUM: errors, logs, and traces are sent to the Faro collector (e.g. Alloy on `http://localhost:12347/collect` when using the parent repo’s docker-compose).
+- **Sentry** (`@sentry/nextjs`) — Error tracking, performance tracing, and optional session replay. Set `NEXT_PUBLIC_SENTRY_DSN` to enable.
+
+Copy `.env.example` to `.env.local` and set `NEXT_PUBLIC_FARO_COLLECTOR_URL` and optionally `NEXT_PUBLIC_SENTRY_DSN`. With the default Faro URL, run the [observability stack](../../) (Alloy, Loki, Tempo, etc.) to receive RUM data.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
