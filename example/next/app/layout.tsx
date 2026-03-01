@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { FaroProvider } from "./providers/faro-provider";
+import FrontendObservability from "@/components/frontend-observability";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -28,7 +28,8 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <FaroProvider>{children}</FaroProvider>
+        <FrontendObservability />
+        {children}
       </body>
     </html>
   );

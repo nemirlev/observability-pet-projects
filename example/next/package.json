@@ -9,8 +9,14 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@grafana/faro-react": "^2.2.4",
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/sdk-trace-node": "^0.52.0",
+    "@grafana/faro-web-sdk": "^2.2.4",
     "@grafana/faro-web-tracing": "^2.2.4",
+    "@opentelemetry/api-logs": "^0.212.0",
+    "@opentelemetry/instrumentation": "^0.212.0",
+    "@opentelemetry/sdk-logs": "^0.212.0",
+    "@vercel/otel": "^2.1.1",
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3"

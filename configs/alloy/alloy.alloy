@@ -54,7 +54,8 @@ otelcol.exporter.otlp "tempo" {
 }
 
 // ========== RUM (Grafana Faro) ==========
-// Browser apps send to Faro receiver; logs go to Loki, traces to Tempo
+// Browser apps send to Faro receiver; logs go to Loki, traces via batch to Tempo
+// Faro traces go through the same batch processor as OTLP so they are flushed correctly.
 // extra_log_labels: fallback when client does not set serviceName (e.g. old SDK)
 faro.receiver "rum" {
   server {
@@ -67,6 +68,6 @@ faro.receiver "rum" {
   }
   output {
     logs   = [loki.write.default.receiver]
-    traces = [otelcol.exporter.otlp.tempo.input]
+    traces = [otelcol.processor.batch.default.input]
   }
 }
