@@ -54,20 +54,34 @@ otelcol.exporter.otlp "tempo" {
 }
 
 // ========== RUM (Grafana Faro) ==========
-// Browser apps send to Faro receiver; logs go to Loki, traces via batch to Tempo
-// Faro traces go through the same batch processor as OTLP so they are flushed correctly.
-// extra_log_labels: fallback when client does not set serviceName (e.g. old SDK)
+// Browser apps send to Faro receiver; logs go to Loki via loki.process (to promote "kind" from log body to stream label), traces via batch to Tempo.
+// The public dashboard filters by stream labels: Application, Environment, kind. Faro puts kind in the log body (logfmt); we promote it here.
 faro.receiver "rum" {
   server {
     listen_address = "0.0.0.0"
     listen_port    = 12347
     cors_allowed_origins = ["*"]
   }
+  // Public dashboard variables: Environment regex "K8S.*", Application regex "MainSpa". Use values that match so dropdowns and panels find data.
   extra_log_labels = {
-    service = "next-app",
+    service     = "next-app",
+    Application = "MainSpa",
+    Environment = "K8S.development",
   }
   output {
-    logs   = [loki.write.default.receiver]
+    logs   = [loki.process.faro.receiver]
     traces = [otelcol.processor.batch.default.input]
+  }
+}
+
+// Promote "kind" from log line (logfmt) to Loki stream label so dashboard queries {kind="measurement"} match.
+loki.process "faro" {
+  forward_to = [loki.write.default.receiver]
+
+  stage.logfmt {
+    mapping = { "kind" = "kind" }
+  }
+  stage.labels {
+    values = { kind = "kind" }
   }
 }

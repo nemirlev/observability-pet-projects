@@ -53,6 +53,11 @@ services:
       - --server.http.listen-addr=0.0.0.0:12345
     volumes:
       - ./configs/alloy/alloy.alloy:/etc/alloy/config.alloy:ro
+      # Next.js sourcemaps: Alloy reads .map from here. Requires "npm run build" in example/next so .next/static/chunks/*.map exist.
+      - ./example/next/.next:/var/sourcemaps/_next:ro
+    # So Alloy can fetch minified .js at http://localhost:3001/... (browser origin) from inside the container.
+    extra_hosts:
+      - "localhost:host-gateway"
     ports:
       - "12345:12345"
       - "4317:4317"

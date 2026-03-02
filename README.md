@@ -51,7 +51,7 @@
 ## Требования
 
 - Docker и Docker Compose (v2+)
-- Сеть `monitoring` создаётся при первом запуске
+- Сеть `monitoring` — внешняя, её нужно создать один раз вручную (и основной стек, и пример Next.js подключаются к ней)
 
 ## Запуск
 
@@ -107,6 +107,17 @@ docker compose ps
    Для локальной разработки с другим origin (например, `http://127.0.0.1:5173`) CORS уже разрешён в Alloy (`cors_allowed_origins = ["*"]`). В production укажите свой домен в `configs/alloy/alloy.alloy` в блоке `faro.receiver "rum"`.
 
 3. **Проверка**: откройте приложение, сгенерируйте ошибку или навигацию — в Grafana в Loki появятся логи с меткой `app="my-app"`, в Tempo — трейсы.
+
+   **Дашборд «Grafana Faro - Frontend Monitoring»** (Loki): для отображения данных в панелях в Alloy заданы лейблы `Application` и `Environment` (`extra_log_labels` в `faro.receiver`). Переменные дашборда по умолчанию: Environment = `development`, Application = `next-app`. Если данных нет — выберите в шапке дашборда те же значения и проверьте диапазон времени (например «Last 24 hours»). Лейбл `kind` (measurement, exception, event) добавляется Alloy из payload Faro (нужна версия Alloy с фиксом [#632](https://github.com/grafana/alloy/pull/632)).
+
+4. **Ограничение (sourcemaps в Docker)**: приложение и Alloy в одной сети (например `nextjs` и `alloy`), но URL во фреймах стека приходят из браузера — это адрес, с которого пользователь открыл приложение (например `http://localhost:3001`), а не внутренний адрес контейнера (`http://nextjs:3000`). В `faro.receiver` **нет опции** указать «для загрузки исходников ходи на этот адрес»; Alloy пытается загрузить по URL из стека и в контейнере не может достучаться до `localhost:3001`. Поэтому в конфиге включено `sourcemaps.download = false` — ошибки в логах исчезают, разрешение стека в исходники отключено. Чтобы это работало изолированно по сети, нужна доработка в Alloy (например `sourcemaps.fetch_base_url` или маппинг origin → внутренний URL). Имеет смысл открыть issue в [grafana/alloy](https://github.com/grafana/alloy/issues) с запросом такой опции.
+
+5. **Проверка, что `sourcemaps.location` работает** (в конфиге включены location + volume в docker-compose):
+   - **Важно**: в `npm run dev` Next.js не пишет .map в `.next/static/chunks/`. Чтобы Alloy находил sourcemaps на диске, один раз выполните в `example/next`: `npm run build`. После этого в `.next/static/chunks/` появятся `*.js.map`; перезапустите стек при необходимости.
+   - **Метрики в Grafana**: в Explore выберите Mimir, запрос `faro_receiver_sourcemap_file_reads_total` или `faro_receiver_sourcemap_downloads_total` (job=`alloy`). Рост `file_reads` при ошибках во фронте — sourcemaps с диска работают.
+   - **Метрики Alloy напрямую**: http://localhost:12345 или `curl -s http://localhost:12345/metrics | grep faro_receiver_sourcemap`.
+   - **Loki**: вызовите во фронте ошибку (кнопка в example/next), найдите лог в Loki. Разрешённый стек — исходный файл и строка (`Component.tsx:42:10`); неразрешённый — минифицированный чанк (`chunk_xxx._.js:1:2845`).
+   - **Логи Alloy**: при успешном разрешении не должно быть сообщений `Error resolving stack trace frame source location`.
 
 ## Конфигурация
 
