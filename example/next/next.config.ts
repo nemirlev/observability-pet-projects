@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // So Alloy faro.receiver can resolve stack traces from disk (sourcemaps.location).
+  productionBrowserSourceMaps: true,
 };
 
 export default nextConfig;

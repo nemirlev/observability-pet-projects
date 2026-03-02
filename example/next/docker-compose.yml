@@ -1,0 +1,21 @@
+services:
+  nextjs:
+    image: node:latest
+    container_name: nextjs
+    working_dir: /app
+    volumes:
+      - .:/app
+    env_file:
+      - .env.local
+    command: sh -c "npm install && npm run dev"
+    ports:
+      - "3001:3000"
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    networks:
+      - monitoring
+
+networks:
+  monitoring:
+    name: monitoring
+    external: true

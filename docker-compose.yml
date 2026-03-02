@@ -82,7 +82,7 @@ services:
 networks:
   monitoring:
     name: monitoring
-    driver: bridge
+    external: true
 
 volumes:
   grafana_data:
